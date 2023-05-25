@@ -9,6 +9,7 @@ from algoritmos.estandarizacion import rescaling, zscore, white_stripe,histogram
 
 st.set_page_config(page_title="Estandarización & eliminación de ruido", page_icon="📊")
 
+
 st.markdown("# Estandarización & eliminación de ruido")
 st.sidebar.header("Preprocesamiento")
 st.write(
@@ -49,16 +50,20 @@ image_data = nib.load(folder_path+"/"+imagen).get_fdata()
 if 'imagen_preprocesada' not in st.session_state:
     st.session_state.imagen_preprocesada = image_data
 
+if 'name_imagen_preprocesada' not in st.session_state:
+    st.session_state.name_imagen_preprocesada = imagen
+
+
 
 #####cargar histograma 
 
 if algoritmo != 'Ninguno':
     with col1:
-            hist1_data = image_data[image_data > 10].flatten()
-            fig1, ax1 = plt.subplots()
-            ax1.hist(hist1_data, bins=100)
-            st.write("Histograma sin estandarización")
-            st.pyplot(fig1)        
+        hist1_data = image_data[image_data > 10].flatten()
+        fig1, ax1 = plt.subplots()
+        ax1.hist(hist1_data, bins=100)
+        st.write("Histograma sin estandarización")
+        st.pyplot(fig1)        
 
 
     with col2:
@@ -88,7 +93,9 @@ if algoritmo != 'Ninguno':
 
         st.write("Histograma con estandarización")
         st.pyplot(fig2)
-    st.session_state.imagen_preprocesada = image_data_rescaled
+        
+    st.session_state.imagen_preprocesada =  image_data_rescaled
+    st.session_state.name_imagen_preprocesada = imagen
 
 
 if ruido != 'Ninguno':
@@ -97,8 +104,34 @@ if ruido != 'Ninguno':
         fig, ax = plt.subplots(figsize=(50, 50))
 
         if(imagen == 'T1.nii.gz'):
-            opciones = ['Ninguna', 'Axial', 'Sagital', 'Coronal']
-            corte = st.selectbox('Selecciona una opción', opciones)
+            opciones = [ 'Axial', 'Sagital', 'Coronal']
+            corte = st.selectbox('1.Selecciona un corte', opciones)
+
+            if corte == 'Axial':
+                valor_especifico = 100
+                valor_maximo = image_data_rescaled.shape[1]
+                ####slider
+                valor_seleccionado = st.slider("1.Selecciona un valor", 0, valor_maximo, valor_especifico)
+                ###imagen
+                ax.imshow(image_data_rescaled[:, valor_seleccionado, :], cmap='bone')
+
+            if corte == 'Sagital':
+                valor_especifico = 100
+                valor_maximo = image_data_rescaled.shape[2]
+                ####slider
+                valor_seleccionado = st.slider("1.Selecciona un valor", 0, valor_maximo, valor_especifico)
+                ###imagen
+                ax.imshow(np.rot90(image_data_rescaled[:, :, valor_seleccionado],k=-1), cmap='bone')
+
+            if corte == 'Coronal':
+                valor_especifico = 100
+                valor_maximo = image_data_rescaled.shape[0]
+                ####slider
+                valor_seleccionado = st.slider("1.Selecciona un valor", 0, valor_maximo, valor_especifico)
+                ###imagen
+                ax.imshow(image_data_rescaled[valor_seleccionado, :, :], cmap='bone')
+
+
         if(imagen == 'IR.nii.gz' or imagen == 'FLAIR.nii.gz'):
             valor_especifico = 25
             valor_maximo = image_data_rescaled.shape[2]
@@ -123,8 +156,32 @@ if ruido != 'Ninguno':
             filtered_image = median_filter_3d(image_data_rescaled)
 
         if(imagen == 'T1.nii.gz'):
-            opciones = ['Ninguna', 'Axial', 'Sagital', 'Coronal']
-            corte = st.selectbox('Selecciona una opción', opciones)
+            opciones = ['Axial', 'Sagital', 'Coronal']
+            corte = st.selectbox('2.Selecciona un corte', opciones)
+
+            if corte == 'Axial':
+                valor_especifico = 100
+                valor_maximo = filtered_image.shape[1]
+                ####slider
+                valor_seleccionado = st.slider("2.Selecciona un valor", 0, valor_maximo, valor_especifico)
+                ###imagen
+                ax.imshow(filtered_image[:, valor_seleccionado, :], cmap='bone')
+
+            if corte == 'Sagital':
+                valor_especifico = 100
+                valor_maximo = filtered_image.shape[2]
+                ####slider
+                valor_seleccionado = st.slider("2.Selecciona un valor", 0, valor_maximo, valor_especifico)
+                ###imagen
+                ax.imshow(np.rot90(filtered_image[:, :, valor_seleccionado],k=-1), cmap='bone')
+
+            if corte == 'Coronal':
+                valor_especifico = 100
+                valor_maximo = filtered_image.shape[0]
+                ####slider
+                valor_seleccionado = st.slider("2.Selecciona un valor", 0, valor_maximo, valor_especifico)
+                ###imagen
+                ax.imshow(filtered_image[valor_seleccionado, :, :], cmap='bone')
         if(imagen == 'IR.nii.gz' or imagen == 'FLAIR.nii.gz'):
             valor_especifico = 25
             valor_maximo = filtered_image.shape[2]
@@ -139,5 +196,6 @@ if ruido != 'Ninguno':
         st.image(buffer, caption = imagen, use_column_width=True)
         
 
-    st.session_state.imagen_preprocesada = filtered_image
+    st.session_state.imagen_preprocesada =  filtered_image
+    st.session_state.name_imagen_preprocesada = imagen
     
