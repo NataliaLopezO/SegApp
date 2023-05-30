@@ -16,6 +16,7 @@ instala las siguientes dependencias
 <li>pip install matplotlib</li>
 <li>pip install nibabel</li>
 <li>pip install scipy</li>
+<li>pip install SimpleITK</li>
 </ul>
 
 Seguido de esto para ejecutar el proyecto: 
