@@ -32,6 +32,18 @@ if algoritmo != 'Ninguno':
         tau = st.sidebar.number_input("Tau:")
         tol = st.sidebar.number_input("Tol:")
         segmentacion = isoData(image_data, tau, tol)
+    
+    if algoritmo == 'Region Growing':
+        tol = st.sidebar.number_input("Tol:", value=142)
+        segmentacion = region_growing(image_data, 142,142,142, tol)
+    
+    if algoritmo == 'Clustering':
+        ks = st.sidebar.number_input("Clusters:", value=2)
+        segmentacion = clustering(image_data, ks)
+    
+    if algoritmo == 'Gaussian Mixture Model':
+        ks = st.sidebar.number_input("Clusters:", value=2)
+        segmentacion = gmm(image_data, ks)
 
     if name_imagen == 'T1.nii.gz':
         opciones = [ 'Axial', 'Sagital', 'Coronal']

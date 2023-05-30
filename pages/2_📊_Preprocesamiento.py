@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import os
 import io
 
-from algoritmos.estandarizacion import rescaling, zscore, white_stripe,histogram_matching, mean_filter_3d, median_filter_3d
+from algoritmos.estandarizacion import rescaling, zscore, white_stripe,histogram_matching, mean_filter_3d, median_filter_3d, meanwithBorder
 
 st.set_page_config(page_title="Estandarización & eliminación de ruido", page_icon="📊")
 
@@ -80,14 +80,15 @@ if algoritmo != 'Ninguno':
             ax2.hist(hist2_data, bins=100)
 
         if algoritmo == 'White Stripe':
-            image_data_rescaled = white_stripe(image_data)
-            hist2_data = image_data_rescaled.flatten()
+            image_data_rescaled = white_stripe(image_data, imagen)
+            hist2_data = image_data_rescaled[image_data_rescaled>0.5 ].flatten()
             fig2, ax2 = plt.subplots()
             ax2.hist(hist2_data, bins=100)
 
         if algoritmo == 'Histogram Matching':
-            image_data_rescaled = histogram_matching(image_data)
-            hist2_data = image_data_rescaled.flatten()
+            ks = st.number_input("Percentiles:", value=3)
+            image_data_rescaled = histogram_matching(image_data, ks, imagen)
+            hist2_data = image_data_rescaled[image_data_rescaled>10].flatten()
             fig2, ax2 = plt.subplots()
             ax2.hist(hist2_data, bins=100)
 
@@ -154,6 +155,9 @@ if ruido != 'Ninguno':
         
         if ruido == 'Median Filter':
             filtered_image = median_filter_3d(image_data_rescaled)
+
+        if ruido == 'Median Filter with edges':
+            filtered_image = meanwithBorder(image_data_rescaled)
 
         if(imagen == 'T1.nii.gz'):
             opciones = ['Axial', 'Sagital', 'Coronal']

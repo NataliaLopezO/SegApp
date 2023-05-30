@@ -1,6 +1,5 @@
 import numpy as np
 from scipy.signal import find_peaks
-import scipy.stats as stats
 import nibabel as nib
 
 def rescaling(image):
@@ -19,58 +18,42 @@ def zscore(image):
 
 
 
-def white_stripe(X):
+def white_stripe(X, tipo):
+  hist, big_edges = np.histogram(X.flatten(), bins= 'auto')
+  picos, _ = find_peaks(hist, height= 100)
+  val_picos = big_edges[picos]
 
-    # Calcula el histograma
-    hist, bins = np.histogram(X.ravel(), bins="auto")
+  if tipo == 'FLAIR.nii.gz' or tipo == 'T1.nii.gz':
+    image_data_rescaled = X/ val_picos[1]
 
-    # Encuentra los picos del histograma
-    peaks, _ = find_peaks(hist)
+  if tipo == 'IR.nii.gz':
+    image_data_rescaled = X/val_picos[0]
 
-    # Si hay al menos tres picos, utiliza el valor moda entre el segundo y el tercer pico como divisor
-    if len(peaks) >= 3:
-        last_peak = peaks[-1]
-        #second_last_peak = peaks[-2]
-        start_index = max(0, last_peak - 10)
-        last_peak_range = range(int(bins[start_index]), int(bins[-1]) + 1)
-        #second_last_peak_range = range(int(bins[second_last_peak]), int(bins[last_peak])+1)
-        mode, _ = stats.mode(hist[last_peak_range])
-        divisor = mode[0]
-    # Si hay menos de tres picos, utiliza el valor moda de todo el histograma como divisor
-    else:
-        mode, _ = stats.mode(hist)
-        divisor = mode[0]
+  return image_data_rescaled
 
-    # Divide el histograma por el valor divisor
-  #hist_norm = hist / divisor
-    image_ws = X / divisor
 
-    return image_ws
+def histogram_matching(image_data, ks, ref):
 
-def histogram_matching(image_data):
-    ## Load the original image data
-    data_orig = image_data
-    # Load the target image data
-    #path = os.path.abspath("./images/1/FLAIR.nii.gz")
-    data_target = nib.load('uploaded_images/T1.nii.gz').get_fdata()
+  if ref == 'T1.nii.gz':
+    data_target = nib.load('ref_images/T1_copia.nii.gz').get_fdata()
+  if ref == 'IR.nii.gz':
+    data_target = nib.load('ref_images/IR_copia.nii.gz').get_fdata()
+  if ref == 'FLAIR.nii.gz':
+    data_target = nib.load('ref_images/FLAIR_copia.nii.gz').get_fdata()   
 
-    # Flatten the data arrays into 1D arrays
-    flat_orig = data_orig.flatten()
-    flat_target = data_target.flatten()
+  ini=0
+  fin = 100
+  step = (fin - ini)/(ks-1)
 
-    # Calculate the cumulative histograms for the original and target images
-    hist_orig, bins = np.histogram(flat_orig, bins=256, range=(0, 255), density=True)
-    hist_orig_cumulative = hist_orig.cumsum()
-    hist_target, _ = np.histogram(flat_target, bins=256, range=(0, 255), density=True)
-    hist_target_cumulative = hist_target.cumsum()
+  percentiles_data = np.arange(ini, fin+step, step)
+  percentiles_target = np.arange(ini, fin+step, step)
 
-    # Map the values of the original image to the values of the target image
-    lut = np.interp(hist_orig_cumulative, hist_target_cumulative, bins[:-1])
+  p1 = np.percentile(image_data, percentiles_data)
+  p2 = np.percentile(data_target, percentiles_target)
 
-    # Apply the mapping to the original image data
-    data_matched = np.interp(data_orig, bins[:-1], lut)
+  
+  return np.interp(image_data, p1, p2)
 
-    return data_matched
 
 def mean_filter_3d(image):
     depth, height, width = image.shape
@@ -111,3 +94,32 @@ def median_filter_3d(image):
                 filtered_image[z, y, x] = filtered_value
 
     return filtered_image
+
+def derivada(image):
+  df = np.zeros_like(image)
+  for x in range(1, image.shape[0] - 2):
+    for y in range(1, image.shape[1] - 2):
+      for z in range(1, image.shape[2] - 2):
+        dfdx = np.power( image[x+1, y, z]- image[x-1,y,z] , 2)
+        dfdy = np.power( image[x, y+1, z]- image[x,y-1,z] , 2)
+        dfdz = np.power( image[x, y, z+1]- image[x,y,z-1] , 2)
+        df[x,y,z] =np.sqrt(dfdx + dfdy + dfdz)
+  return df
+
+
+def meanwithBorder(image_data, tol=10):
+  df = derivada(image_data)
+  depth, height, width = image_data.shape
+  filtered_image = np.zeros_like(image_data)
+  for x in range(1, depth - 1):
+      for y in range(1, height - 1):
+          for z in range(1, width - 1):
+              if np.abs(df[x,y,z]) < tol:
+                neighborhood = image_data[x-1:x+2 , y- 1: y+2 , z-1: z+2]
+                filtered_value = np.mean(neighborhood)
+                filtered_image[x, y, z] = filtered_value
+
+              else:
+                filtered_image[x, y, z] = image_data[x, y, z]
+
+  return filtered_image
