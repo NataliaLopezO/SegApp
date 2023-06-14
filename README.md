@@ -17,6 +17,9 @@ instala las siguientes dependencias
 <li>pip install nibabel</li>
 <li>pip install scipy</li>
 <li>pip install SimpleITK</li>
+<li>pip install ants</li>
+<li>pip install pyrobex</li>
+<li>pip install medpy</li>
 </ul>
 
 Seguido de esto para ejecutar el proyecto: 
